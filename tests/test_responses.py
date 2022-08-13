@@ -273,6 +273,21 @@ def test_file_response_with_chinese_filename(tmpdir, test_client_factory):
     assert response.headers["content-disposition"] == expected_disposition
 
 
+def test_file_response_with_inline_disposition(tmpdir, test_client_factory):
+    content = b"file content"
+    filename = "hello.txt"
+    path = os.path.join(tmpdir, filename)
+    with open(path, "wb") as f:
+        f.write(content)
+    app = FileResponse(path=path, filename=filename, content_disposition_type="inline")
+    client = test_client_factory(app)
+    response = client.get("/")
+    expected_disposition = 'inline; filename="hello.txt"'
+    assert response.status_code == status.HTTP_200_OK
+    assert response.content == content
+    assert response.headers["content-disposition"] == expected_disposition
+
+
 def test_set_cookie(test_client_factory):
     async def app(scope, receive, send):
         response = Response("Hello, world!", media_type="text/plain")
@@ -376,3 +391,34 @@ def test_streaming_response_known_size(test_client_factory):
     client: TestClient = test_client_factory(app)
     response = client.get("/")
     assert response.headers["content-length"] == "10"
+
+
+@pytest.mark.anyio
+async def test_streaming_response_stops_if_receiving_http_disconnect():
+    streamed = 0
+
+    disconnected = anyio.Event()
+
+    async def receive_disconnect():
+        await disconnected.wait()
+        return {"type": "http.disconnect"}
+
+    async def send(message):
+        nonlocal streamed
+        if message["type"] == "http.response.body":
+            streamed += len(message.get("body", b""))
+            # Simulate disconnection after download has started
+            if streamed >= 16:
+                disconnected.set()
+
+    async def stream_indefinitely():
+        while True:
+            # Need a sleep for the event loop to switch to another task
+            await anyio.sleep(0)
+            yield b"chunk "
+
+    response = StreamingResponse(content=stream_indefinitely())
+
+    with anyio.move_on_after(1) as cancel_scope:
+        await response({}, receive_disconnect, send)
+    assert not cancel_scope.cancel_called, "Content streaming should stop itself."

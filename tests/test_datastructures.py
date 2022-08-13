@@ -162,6 +162,50 @@ def test_mutable_headers():
     assert h.raw == [(b"b", b"4")]
 
 
+def test_mutable_headers_merge():
+    h = MutableHeaders()
+    h = h | MutableHeaders({"a": "1"})
+    assert isinstance(h, MutableHeaders)
+    assert dict(h) == {"a": "1"}
+    assert h.items() == [("a", "1")]
+    assert h.raw == [(b"a", b"1")]
+
+
+def test_mutable_headers_merge_dict():
+    h = MutableHeaders()
+    h = h | {"a": "1"}
+    assert isinstance(h, MutableHeaders)
+    assert dict(h) == {"a": "1"}
+    assert h.items() == [("a", "1")]
+    assert h.raw == [(b"a", b"1")]
+
+
+def test_mutable_headers_update():
+    h = MutableHeaders()
+    h |= MutableHeaders({"a": "1"})
+    assert isinstance(h, MutableHeaders)
+    assert dict(h) == {"a": "1"}
+    assert h.items() == [("a", "1")]
+    assert h.raw == [(b"a", b"1")]
+
+
+def test_mutable_headers_update_dict():
+    h = MutableHeaders()
+    h |= {"a": "1"}
+    assert isinstance(h, MutableHeaders)
+    assert dict(h) == {"a": "1"}
+    assert h.items() == [("a", "1")]
+    assert h.raw == [(b"a", b"1")]
+
+
+def test_mutable_headers_merge_not_mapping():
+    h = MutableHeaders()
+    with pytest.raises(TypeError):
+        h |= {"not_mapping"}  # type: ignore
+    with pytest.raises(TypeError):
+        h | {"not_mapping"}  # type: ignore
+
+
 def test_headers_mutablecopy():
     h = Headers(raw=[(b"a", b"123"), (b"a", b"456"), (b"b", b"789")])
     c = h.mutablecopy()
@@ -176,7 +220,9 @@ def test_url_blank_params():
     assert "abc" in q
     assert "def" in q
     assert "b" in q
-    assert len(q.get("abc")) == 0
+    val = q.get("abc")
+    assert val is not None
+    assert len(val) == 0
     assert len(q["a"]) == 3
     assert list(q.keys()) == ["a", "abc", "def", "b"]
 
@@ -298,6 +344,7 @@ def test_multidict():
     q = MultiDict([("a", "123"), ("a", "456")])
     q["a"] = "789"
     assert q["a"] == "789"
+    assert q.get("a") == "789"
     assert q.getlist("a") == ["789"]
 
     q = MultiDict([("a", "123"), ("a", "456")])

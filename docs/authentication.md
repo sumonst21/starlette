@@ -115,6 +115,10 @@ async def dashboard(request):
     ...
 ```
 
+!!! note
+    The `status_code` parameter is not supported with WebSockets. The 403 (Forbidden)
+    status code will always be used for those.
+
 Alternatively you might want to redirect unauthenticated users to a different
 page.
 
@@ -129,6 +133,29 @@ async def homepage(request):
 @requires('authenticated', redirect='homepage')
 async def dashboard(request):
     ...
+```
+
+When redirecting users, the page you redirect them to will include URL they originally requested at the `next` query param:
+
+```python
+from starlette.authentication import requires
+from starlette.responses import RedirectResponse
+
+
+@requires('authenticated', redirect='login')
+async def admin(request):
+    ...
+
+
+async def login(request):
+    if request.method == "POST":
+        # Now that the user is authenticated,
+        # we can send them to their original request destination
+        if request.user.is_authenticated:
+            next_url = request.query_params.get("next")
+            if next_url:
+                return RedirectResponse(next_url)
+            return RedirectResponse("/")
 ```
 
 For class-based endpoints, you should wrap the decorator
@@ -151,6 +178,8 @@ You can customise the error response sent when a `AuthenticationError` is
 raised by an auth backend:
 
 ```python
+from starlette.applications import Starlette
+from starlette.middleware import Middleware
 from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -159,5 +188,9 @@ from starlette.responses import JSONResponse
 def on_auth_error(request: Request, exc: Exception):
     return JSONResponse({"error": str(exc)}, status_code=401)
 
-app.add_middleware(AuthenticationMiddleware, backend=BasicAuthBackend(), on_error=on_auth_error)
+app = Starlette(
+    middleware=[
+        Middleware(AuthenticationMiddleware, backend=BasicAuthBackend(), on_error=on_auth_error),
+    ],
+)
 ```
