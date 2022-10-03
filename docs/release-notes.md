@@ -1,3 +1,31 @@
+## 1.0.0
+
+Wow!!! 1.0.0 is here! 🎉
+
+### Removed
+
+* Removed `WSGIMiddleware`, which is deprecated since `0.19.0`. Please use [`a2wsgi`](https://github.com/abersheeran/a2wsgi) instead.
+* Removed `run_until_first_complete`, which is deprecated since `0.19.0`.
+* Removed `iscoroutinefunction_or_partial`, which is deprecated since `0.20.1`.
+  It was an internal function, which we have replaced by `_utils.is_async_callable`.
+* Removed `WS_1004_NO_STATUS_RCVD` and `WS_1005_ABNORMAL_CLOSURE` from the `status` module, which were deprecated since `0.19.1`.
+* Removed `ExceptionMiddleware` from the `exceptions` module, which was deprecated since `0.19.1`.
+  The same middleware can be found in the `middleware.exceptions` module.
+
+### Deprecated
+
+* Deprecated `BaseHTTPMiddleware`. Please refer to [Pure ASGI Middleware](https://www.starlette.io/middleware/#pure-asgi-middleware)
+  for recommended approach.
+* Deprecated `Router.on_event` decorator. Please refer to [Registering events](https://www.starlette.io/events/#registering-events)
+  for recommended approach.
+* Deprecated `Router.websocket_route` decorator. Please refer to [WebSocket Routing](https://www.starlette.io/routing/#websocket-routing)
+  for recommended approach.
+* Deprecated `Router.route` decorator. Please refer to [HTTP Routing](https://www.starlette.io/routing/#http-routing) for recommended approach.
+* Deprecated `Router.host` method. Please refer to [Host-based routing](https://www.starlette.io/routing/#host-based-routing)
+  for recommended approach.
+* Deprecated `Router.mount` method. Please refer to [Submounting routes](https://www.starlette.io/routing/#submounting-routes)
+  for recommended approach.
+
 ## 0.21.0
 
 September 26, 2022
