@@ -2,6 +2,7 @@ import typing
 
 from starlette.datastructures import State, URLPath
 from starlette.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.errors import ServerErrorMiddleware
 from starlette.middleware.exceptions import ExceptionMiddleware
 from starlette.requests import Request
@@ -121,3 +122,43 @@ class Starlette:
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         scope["app"] = self
         await self.middleware_stack(scope, receive, send)
+
+    def mount(
+        self, path: str, app: ASGIApp, name: typing.Optional[str] = None
+    ) -> None:  # pragma: nocover
+        self.router.mount(path, app=app, name=name)
+
+    def host(
+        self, host: str, app: ASGIApp, name: typing.Optional[str] = None
+    ) -> None:  # pragma: no cover
+        self.router.host(host, app=app, name=name)
+
+    def add_exception_handler(
+        self,
+        exc_class_or_status_code: typing.Union[int, typing.Type[Exception]],
+        handler: typing.Callable,
+    ) -> None:  # pragma: no cover
+        self.exception_handlers[exc_class_or_status_code] = handler
+        self.middleware_stack = self.build_middleware_stack()
+
+    def add_event_handler(
+        self, event_type: str, func: typing.Callable
+    ) -> None:  # pragma: no cover
+        self.router.add_event_handler(event_type, func)
+
+    def add_route(
+        self,
+        path: str,
+        route: typing.Callable,
+        methods: typing.Optional[typing.List[str]] = None,
+        name: typing.Optional[str] = None,
+        include_in_schema: bool = True,
+    ) -> None:  # pragma: no cover
+        self.router.add_route(
+            path, route, methods=methods, name=name, include_in_schema=include_in_schema
+        )
+
+    def add_websocket_route(
+        self, path: str, route: typing.Callable, name: typing.Optional[str] = None
+    ) -> None:  # pragma: no cover
+        self.router.add_websocket_route(path, route, name=name)
